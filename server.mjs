@@ -13,13 +13,21 @@ const server = new Server(socket =>{
         const lines = allData.split("\r\n");
         if(lines.findIndex(l =>l === "") >= 0){
             let fileName = lines[0].split(" ")[1];
-            let response = "HTTP/1.1 200 OK\r\n";
-            response += "Content-Type: text/html\r\n";
-            response += "\r\n";
-            fileName = path.join(WEB, fileName);
-            const fileContent = await fs.readFile(fileName);
-            response += fileContent;
-            response += "\r\n";
+            let response = "";
+            try {
+                let fullFileName = path.join(WEB, fileName);
+                const fileContent = await fs.readFile(fullFileName);
+                response += "HTTP/1.1 200 OK\r\n";
+                response += "\r\n";
+                response += fileContent;
+                response += "\r\n";
+            } catch (ERROR){
+                response += "HTTP/1.1 404 Not Found\r\n";
+                response += "Content-Type: text/html\r\n"
+                response += "\r\n";
+                response += `<html><body><h1>${fileName} not found </h1></body></html>\r\n`;
+                response += "\r\n";
+            }
             socket.write(response, () =>{
                 socket.end();
             });
