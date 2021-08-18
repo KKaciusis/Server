@@ -17,16 +17,12 @@ const server = new Server(socket =>{
             try {
                 let fullFileName = path.join(WEB, fileName);
                 const fileContent = await fs.readFile(fullFileName);
-                response += "HTTP/1.1 200 OK\r\n";
-                response += "\r\n";
-                response += fileContent;
-                response += "\r\n";
+                response += createResponce(200, "OK", null, fileContent);
             } catch (ERROR){
-                response += "HTTP/1.1 404 Not Found\r\n";
-                response += "Content-Type: text/html\r\n"
-                response += "\r\n";
-                response += `<html><body><h1>${fileName} not found </h1></body></html>\r\n`;
-                response += "\r\n";
+                if(error instanceof TypeError){
+                    throw error;
+                }
+                response = createResponce( 404, "Not Found",{"Content-Type": "text/html"} `<html><body><h1>${fileName} not found</h1></body></html>` )
             }
             socket.write(response, () =>{
                 socket.end();
@@ -36,5 +32,31 @@ const server = new Server(socket =>{
 
 });
 
+function createResponce(status, msg, headers, content){
+    if (typeof status !== "number"){
+        throw new TypeError("status must be a number");
+    }
+    if (typeof msg !== "string"){
+        throw new TypeError("msg must be a string");
+    }
+    if (headers && typeof headers !== "object"){
+        throw new TypeError("headers must be an object");
+    }
+    if (content && typeof content !== "string"){
+        throw new TypeError("headers must be an object");
+    }
+    let res = `HTTP/1.1 ${status} ${msg}\r\n`
+    if (headers) {
+        for (const header in headers);{
+        res += `${header}: ${headers[header]}\r\n`;                
+        }
+        res += "\r\n";
+        if (content){
+            res += content;
+        }
+        res += "\r\n";
+        return res;
+    }
+}
 server.listen(PORT);
 console.log(`Server started on port: ${PORT}`);
